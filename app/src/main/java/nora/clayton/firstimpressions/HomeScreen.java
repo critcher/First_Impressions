@@ -1,9 +1,12 @@
 package nora.clayton.firstimpressions;
 
+import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ImageView;
 
 
 public class HomeScreen extends ActionBarActivity {
@@ -12,6 +15,13 @@ public class HomeScreen extends ActionBarActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home_screen);
+
+        ImageView imgView = (ImageView) findViewById(R.id.imageView);
+        int picIndex = R.drawable.lena;
+        Drawable pic = getResources().getDrawable(picIndex);
+        Bitmap pic2 = FaceDetectorUtils.drawableToBitmap(pic);
+        Bitmap b_img = FaceDetectorUtils.getFace(pic2);
+        imgView.setImageBitmap(b_img);
     }
 
 
