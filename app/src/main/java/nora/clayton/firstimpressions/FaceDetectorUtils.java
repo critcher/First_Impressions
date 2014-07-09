@@ -1,7 +1,6 @@
 package nora.clayton.firstimpressions;
 
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.PointF;
 import android.graphics.Rect;
@@ -16,16 +15,19 @@ import android.media.FaceDetector;
 public class FaceDetectorUtils {
 
     public static Bitmap getFace(Bitmap img){
-        //configure the bitmap factory
-        BitmapFactory.Options bitmap_options = new BitmapFactory.Options();
-        bitmap_options.inPreferredConfig = Bitmap.Config.RGB_565;
+        Bitmap evenImg;
+        //if the width is odd, cut off a column
+        if(img.getWidth() % 2 == 1) {
+            evenImg = Bitmap.createBitmap(img, 0, 0, img.getWidth(), img.getHeight());
+        }
+        else{
+            evenImg = img;
+        }
 
-        FaceDetector face_detector = new FaceDetector(
-                img.getWidth(), img.getHeight(),
-                1);
+        FaceDetector face_detector = new FaceDetector(evenImg.getWidth(), evenImg.getHeight(), 1);
 
         FaceDetector.Face[] faces = new FaceDetector.Face[1];
-        int count = face_detector.findFaces(img,faces);
+        int count = face_detector.findFaces(evenImg, faces);
 
         if (count < 1 || faces[0].confidence() < .25){
             return null;
@@ -35,11 +37,9 @@ public class FaceDetectorUtils {
         PointF midpoint = new PointF();
         faces[0].getMidPoint(midpoint);
 
-        Rect faceRect = getFaceRect(eye_width, midpoint, img.getWidth(), img.getHeight());
-        Bitmap face_img = Bitmap.createBitmap(img, faceRect.left, faceRect.top, faceRect.width(),
+        Rect faceRect = getFaceRect(eye_width, midpoint, evenImg.getWidth(), evenImg.getHeight());
+        return Bitmap.createBitmap(evenImg, faceRect.left, faceRect.top, faceRect.width(),
                                               faceRect.height());
-
-        return face_img;
     }
 
     public static Rect getFaceRect(float eye_width, PointF midpoint, int originalWidth,
