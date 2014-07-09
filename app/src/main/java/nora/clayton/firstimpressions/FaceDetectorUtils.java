@@ -6,6 +6,7 @@ import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.media.FaceDetector;
+import android.util.Log;
 
 /**
  * Created by Clayton on 7/6/2014.
@@ -23,7 +24,8 @@ public class FaceDetectorUtils {
         else{
             evenImg = img;
         }
-
+        Log.e("dimensions:", ""+ img.getHeight() + "x" + img.getWidth());
+        Log.e("dimensions:", ""+ evenImg.getHeight() + "x" + evenImg.getWidth());
         FaceDetector face_detector = new FaceDetector(evenImg.getWidth(), evenImg.getHeight(), 1);
 
         FaceDetector.Face[] faces = new FaceDetector.Face[1];
