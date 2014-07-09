@@ -19,7 +19,7 @@ public class FaceDetectorUtils {
         Bitmap evenImg;
         //if the width is odd, cut off a column
         if(img.getWidth() % 2 == 1) {
-            evenImg = Bitmap.createBitmap(img, 0, 0, img.getWidth(), img.getHeight());
+            evenImg = Bitmap.createBitmap(img, 0, 0, img.getWidth() - 1, img.getHeight());
         }
         else{
             evenImg = img;
