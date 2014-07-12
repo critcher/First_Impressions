@@ -2,19 +2,39 @@ package nora.clayton.firstimpressions;
 
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
+import android.os.*;
 import android.support.v7.app.ActionBarActivity;
-import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 
 
 public class HomeScreen extends ActionBarActivity {
-
+ThreadedCamera tc;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home_screen);
+
+        FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
+        final Button button = (Button) findViewById(R.id.button);
+        button.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                Log.e("button clicked","hmmm");
+                tc.takePicture();
+            }
+        });
+
+
+        tc = new ThreadedCamera(CameraUtils.getFrontCameraId(), this);
+        Log.e("onCreate","" + android.os.Process.myTid());
+        tc.startCam();
+        preview.addView(tc.ch);
+
 
         ImageView imgView = (ImageView) findViewById(R.id.imageView);
         int picIndex = R.drawable.lena;
@@ -42,5 +62,10 @@ public class HomeScreen extends ActionBarActivity {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    public void onPause(){
+        super.onPause();
+        tc.stopCam();
     }
 }
