@@ -18,6 +18,15 @@ public class CameraUtils {
         }
     }
 
+    public static int getRequiredRotation(int id, boolean preview){
+        Camera.CameraInfo camInfo = new Camera.CameraInfo();
+        Camera.getCameraInfo(id,camInfo);
+        int offset = 0;
+        if (preview){
+            offset = 180;
+        }
+        return (camInfo.orientation + offset) % 360;
+    }
 
     public static int getFrontCameraId(){
         int cameraCount = 0;

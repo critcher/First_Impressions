@@ -11,39 +11,48 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 
 
-public class HomeScreen extends ActionBarActivity {
-ThreadedCamera tc;
+public class HomeScreen extends ActionBarActivity implements PictureReadyListener{
+ThreadedCamera tc = null;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home_screen);
 
-        FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
+        LinearLayout preview = (LinearLayout) findViewById(R.id.picLayout);
         final Button button = (Button) findViewById(R.id.button);
         button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 Log.e("button clicked","hmmm");
-                tc.takePicture();
+                if(tc != null) {
+                    tc.takePicture();
+                }
             }
         });
 
-
-        tc = new ThreadedCamera(CameraUtils.getFrontCameraId(), this);
+        if(CameraUtils.checkForFrontCam(this)) {
+            tc = new ThreadedCamera(CameraUtils.getFrontCameraId(), this, this);
+            if (tc.startCam()){
+                preview.addView(tc.ch);
+            }
+        }
         Log.e("onCreate","" + android.os.Process.myTid());
-        tc.startCam();
-        preview.addView(tc.ch);
-
-
-        ImageView imgView = (ImageView) findViewById(R.id.imageView);
-        int picIndex = R.drawable.lena;
-        Drawable pic = getResources().getDrawable(picIndex);
-        Bitmap pic2 = FaceDetectorUtils.drawableToBitmap(pic);
-        Bitmap b_img = FaceDetectorUtils.getFace(pic2);
-        imgView.setImageBitmap(b_img);
+        Log.e("cam id", "" + CameraUtils.getFrontCameraId());
     }
 
+    @Override
+    public void onPictureReady(Bitmap bmap) {
+        final ImageView imgView = (ImageView) findViewById(R.id.imageView);
+        final Bitmap b_img = FaceDetectorUtils.getFace(bmap);
+        imgView.post(new Runnable() {
+            public void run() {
+                imgView.setImageBitmap(b_img);
+                Log.e("UI","image should be there " + (b_img!=null));
+            }
+        });
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -66,6 +75,8 @@ ThreadedCamera tc;
 
     public void onPause(){
         super.onPause();
-        tc.stopCam();
+        if(tc != null) {
+            tc.stopCam();
+        }
     }
 }

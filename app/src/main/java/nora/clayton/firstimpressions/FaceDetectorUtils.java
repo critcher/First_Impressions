@@ -32,7 +32,7 @@ public class FaceDetectorUtils {
         int count = face_detector.findFaces(evenImg, faces);
 
         if (count < 1 || faces[0].confidence() < .25){
-            return null;
+            return evenImg;
         }
 
         float eye_width = faces[0].eyesDistance() * 2;

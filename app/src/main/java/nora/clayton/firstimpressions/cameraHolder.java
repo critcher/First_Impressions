@@ -12,11 +12,13 @@ import android.view.SurfaceView;
 public class cameraHolder extends SurfaceView implements SurfaceHolder.Callback{
     private SurfaceHolder mHolder;
     private Camera mCamera;
+    private int camId;
     Camera.PreviewCallback mRawPreviewCallback;
 
-    public cameraHolder(Context c, Camera cam, Camera.PreviewCallback cb){
+    public cameraHolder(Context c, Camera cam, Camera.PreviewCallback cb, int id){
         super(c);
         mCamera = cam;
+        camId = id;
         mHolder = getHolder();
         mHolder.addCallback(this);
         mRawPreviewCallback = cb;
@@ -54,6 +56,7 @@ public class cameraHolder extends SurfaceView implements SurfaceHolder.Callback{
         try {
             mCamera.setPreviewCallback(mRawPreviewCallback);
             mCamera.setPreviewDisplay(mHolder);
+            mCamera.setDisplayOrientation(CameraUtils.getRequiredRotation(camId, true));
             mCamera.startPreview();
 
         } catch (Exception e){

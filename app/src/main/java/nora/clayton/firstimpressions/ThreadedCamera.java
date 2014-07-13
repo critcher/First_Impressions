@@ -1,6 +1,10 @@
 package nora.clayton.firstimpressions;
 
+import android.app.Activity;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.hardware.Camera;
 import android.os.ConditionVariable;
 import android.os.Looper;
@@ -13,7 +17,7 @@ import java.io.IOException;
  * Created by Clayton on 7/10/2014.
  */
 public class ThreadedCamera {
-    private static int WAIT_FOR_COMMAND_TO_COMPLETE = 10000;  // Milliseconds.
+    private static int WAIT_FOR_COMMAND_TO_COMPLETE = 1000;  // Milliseconds.
 
     private RawPreviewCallback mRawPreviewCallback;
     private ShutterCallback mShutterCallback;
@@ -29,8 +33,9 @@ public class ThreadedCamera {
 
     private Camera mCamera;
     private int camId;
+    private PictureReadyListener listener;
 
-    public ThreadedCamera(int id, Context context){
+    public ThreadedCamera(int id, Context context, Activity activity){
         mRawPreviewCallback = new RawPreviewCallback();
         mShutterCallback = new ShutterCallback();
         mRawPictureCallback = new RawPictureCallback();
@@ -43,6 +48,12 @@ public class ThreadedCamera {
         camId = id;
 
         mContext = context;
+        try {
+            listener = (PictureReadyListener) activity;
+        } catch (ClassCastException e) {
+            throw new ClassCastException("must implement PictureReadyListener");
+        }
+
     }
 
 
@@ -77,7 +88,7 @@ public class ThreadedCamera {
         if(mCamera == null){
             return false;
         }
-        ch = new cameraHolder(mContext,mCamera, mRawPreviewCallback);
+        ch = new cameraHolder(mContext,mCamera, mRawPreviewCallback, camId);
         Log.e("threaded cam","started cam well");
         return true;
     }
@@ -150,6 +161,13 @@ public class ThreadedCamera {
             //TODO: fill in
             Log.e("taking pic","" + android.os.Process.myTid());
             Log.e("threaded cam", "RawPictureCallback callback");
+            BitmapFactory.Options bitmapOpts=new BitmapFactory.Options();
+            bitmapOpts.inPreferredConfig=Bitmap.Config.RGB_565;
+            Bitmap bmap = BitmapFactory.decodeByteArray(rawData,0,rawData.length, bitmapOpts);
+            Matrix rotation = new Matrix();
+            rotation.postRotate(CameraUtils.getRequiredRotation(camId, false));
+            Bitmap orientedBitmap = Bitmap.createBitmap(bmap, 0, 0, bmap.getWidth(), bmap.getHeight(), rotation, true);
+            listener.onPictureReady(orientedBitmap);
         }
     }
 
