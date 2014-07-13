@@ -1,7 +1,6 @@
 package nora.clayton.firstimpressions;
 
 import android.app.Activity;
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
@@ -9,9 +8,6 @@ import android.hardware.Camera;
 import android.os.ConditionVariable;
 import android.os.Looper;
 import android.util.Log;
-import android.view.SurfaceView;
-
-import java.io.IOException;
 
 /**
  * Created by Clayton on 7/10/2014.
@@ -19,37 +15,39 @@ import java.io.IOException;
 public class ThreadedCamera {
     private static int WAIT_FOR_COMMAND_TO_COMPLETE = 1000;  // Milliseconds.
 
-    private RawPreviewCallback mRawPreviewCallback;
-    private ShutterCallback mShutterCallback;
-    private RawPictureCallback mRawPictureCallback;
+    //callback methods
+    private RawPreviewCallback previewCallback;
+    private ShutterCallback shutterCallback;
+    private JpegPictureCallback picCallback;
 
-    private Looper mLooper;
-    private final ConditionVariable mPreviewDone;
-    private final ConditionVariable mSnapshotDone;
+    //threading variables
+    private Looper looper;
+    private final ConditionVariable previewDone;
 
-    public cameraHolder ch;
-
-    private Context mContext;
-
-    private Camera mCamera;
+    //camera variables
+    private Camera cam;
     private int camId;
-    private PictureReadyListener listener;
+    private PictureReadyListener picListener;
 
-    public ThreadedCamera(int id, Context context, Activity activity){
-        mRawPreviewCallback = new RawPreviewCallback();
-        mShutterCallback = new ShutterCallback();
-        mRawPictureCallback = new RawPictureCallback();
+    //handle back to the Activity that owns this threadedCam
+    private Activity callingActivity;
 
-        mLooper = null;
-        mPreviewDone = new ConditionVariable();
-        mSnapshotDone = new ConditionVariable();
+    public ThreadedCamera(int id, Activity activity){
+        previewCallback = new RawPreviewCallback();
+        shutterCallback = new ShutterCallback();
+        picCallback = new JpegPictureCallback();
 
-        mCamera = null;
+        looper = null;
+        previewDone = new ConditionVariable();
+
+        cam = null;
         camId = id;
 
-        mContext = context;
+        callingActivity = activity;
+        //if the calling activity does not implement a PictureReadyListener, we cannot notify
+        //it of a Bitmap that is ready
         try {
-            listener = (PictureReadyListener) activity;
+            picListener = (PictureReadyListener) activity;
         } catch (ClassCastException e) {
             throw new ClassCastException("must implement PictureReadyListener");
         }
@@ -57,10 +55,8 @@ public class ThreadedCamera {
     }
 
 
-    /*
-     * Initializes the message looper so that the Camera object can
-     * receive the callback messages.
-     */
+    //starts the thread for the threaded cam and opens the camera
+    //returns true if everything succeeded
     public boolean startCam() {
         final ConditionVariable startDone = new ConditionVariable();
         Log.e("threaded cam", "start looper");
@@ -74,8 +70,9 @@ public class ThreadedCamera {
                 Log.e("cam loopRun","" + android.os.Process.myTid());
                 // Save the looper so that we can terminate this thread
                 // after we are done with it.
-                mLooper = Looper.myLooper();
+                looper = Looper.myLooper();
                 openCamera();
+                cam.setPreviewCallback(previewCallback);
                 startDone.open();
                 Looper.loop();  // Blocks forever until Looper.quit() is called.
                 Log.e("threaded cam", "initializeMessageLooper: quit.");
@@ -85,108 +82,118 @@ public class ThreadedCamera {
         if (!startDone.block(WAIT_FOR_COMMAND_TO_COMPLETE)) {
             return false;
         }
-        if(mCamera == null){
+        if(cam == null){
             return false;
         }
-        ch = new cameraHolder(mContext,mCamera, mRawPreviewCallback, camId);
         Log.e("threaded cam","started cam well");
         return true;
     }
 
-
+    //helper function that opens the camera safely
     private boolean openCamera() {
         try {
-            mCamera = Camera.open(camId);
+            cam = Camera.open(camId);
         } catch (RuntimeException e) {
             Log.e("CameraError", "Camera failed to open: " + e.getLocalizedMessage());
             return false;
         }
-        Log.e("threaded cam", "opened: " +(mCamera != null));
+        Log.e("threaded cam", "opened: " +(cam != null));
         return true;
     }
 
-
+    //helper function to release the camera safely
     private void releaseCamera(){
-        if (mCamera != null){
-            mCamera.release();        // release the camera for other applications
-            mCamera = null;
+        if (cam != null){
+            cam.release();        // release the camera for other applications
+            cam = null;
         }
     }
 
-
+    //takes the picture only if preview has started successfully (guards against a runtime exception)
     public void takePicture(){
         if(waitForPreviewDone()) {
-            mCamera.takePicture(null, null, mRawPictureCallback);
+            cam.takePicture(null, null, picCallback);
         }
     }
 
 
-    /*
-     * Terminates the message looper thread.
-     */
+    //terminates the thread and releases the camera
     public boolean stopCam(){
-        mLooper.quit();
+        looper.quit();
         try {
-            mLooper.getThread().join();
+            looper.getThread().join();
         }
         catch (InterruptedException e){
             return false;
         }
         releaseCamera();
-        Log.e("threaded cam", "released: " +(mCamera == null));
+        previewDone.close();
+        Log.e("threaded cam", "released: " +(cam == null));
         return true;
     }
 
 
-    //Implement the previewCallback
+    //called when a preview is ready. Just releases the ConditionVariable for now
     private final class RawPreviewCallback implements Camera.PreviewCallback {
         public void onPreviewFrame(byte [] rawData, Camera camera) {
-            mPreviewDone.open();
+            previewDone.open();
         }
     }
 
 
-    //Implement the shutterCallback
+    //Does nothing now, but can be used for a sound or animation that occurs when a pic is taken
     private final class ShutterCallback implements Camera.ShutterCallback {
         public void onShutter() {
-            //TODO: fill in
             Log.e("threaded cam", "onShutter called");
         }
     }
 
 
-    //Implement the RawPictureCallback
-    private final class RawPictureCallback implements Camera.PictureCallback {
-        public void onPictureTaken(byte [] rawData, Camera camera) {
-            //TODO: fill in
+    //Called when a picture has been taken. Gives the PictureReadyListener a properly oriented
+    //Bitmap in RGB_565 format
+    private final class JpegPictureCallback implements Camera.PictureCallback {
+        public void onPictureTaken(byte [] picData, Camera camera) {
             Log.e("taking pic","" + android.os.Process.myTid());
             Log.e("threaded cam", "RawPictureCallback callback");
+            //convert the image data into a Bitmap type in RGB_565 (for face detection)
             BitmapFactory.Options bitmapOpts=new BitmapFactory.Options();
             bitmapOpts.inPreferredConfig=Bitmap.Config.RGB_565;
-            Bitmap bmap = BitmapFactory.decodeByteArray(rawData,0,rawData.length, bitmapOpts);
+            Bitmap bmap = BitmapFactory.decodeByteArray(picData,0,picData.length, bitmapOpts);
+
+            //rotate the picture to be oriented properly
             Matrix rotation = new Matrix();
-            rotation.postRotate(CameraUtils.getRequiredRotation(camId, false));
+            rotation.postRotate(CameraUtils.getRequiredRotation(cam, callingActivity,camId, false));
             Bitmap orientedBitmap = Bitmap.createBitmap(bmap, 0, 0, bmap.getWidth(), bmap.getHeight(), rotation, true);
-            listener.onPictureReady(orientedBitmap);
+
+            //alert the PictureReadyListener
+            picListener.onPictureReady(orientedBitmap);
         }
     }
 
-
-    private void waitForSnapshotDone() {
-        if (!mSnapshotDone.block(WAIT_FOR_COMMAND_TO_COMPLETE)) {
-            // timeout could be expected or unexpected. The caller will decide.
-            Log.e("threaded cam", "waitForSnapshotDone: timeout");
-        }
-        mSnapshotDone.close();
-    }
-
-
+    //A picture cannot be taken until the preview has started, so this method lets you check if
+    //the preview has started
     private boolean waitForPreviewDone() {
-        if (!mPreviewDone.block(WAIT_FOR_COMMAND_TO_COMPLETE)) {
+        if (!previewDone.block(WAIT_FOR_COMMAND_TO_COMPLETE)) {
             Log.e("threaded cam", "waitForPreviewDone: timeout " + android.os.Process.myTid());
             return false;
         }
-        mPreviewDone.close();
+        previewDone.close();
         return true;
+    }
+
+
+
+    //getter methods
+
+    public Camera.PreviewCallback getPreviewCallback(){
+        return previewCallback;
+    }
+
+    public Camera getCamera(){
+        return cam;
+    }
+
+    public int getId(){
+        return camId;
     }
 }

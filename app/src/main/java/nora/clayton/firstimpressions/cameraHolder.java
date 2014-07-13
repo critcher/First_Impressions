@@ -1,5 +1,6 @@
 package nora.clayton.firstimpressions;
 
+import android.app.Activity;
 import android.content.Context;
 import android.hardware.Camera;
 import android.util.Log;
@@ -11,17 +12,15 @@ import android.view.SurfaceView;
  */
 public class cameraHolder extends SurfaceView implements SurfaceHolder.Callback{
     private SurfaceHolder mHolder;
-    private Camera mCamera;
-    private int camId;
-    Camera.PreviewCallback mRawPreviewCallback;
+    private Activity activity;
+    private ThreadedCamera threadedCam;
 
-    public cameraHolder(Context c, Camera cam, Camera.PreviewCallback cb, int id){
+    public cameraHolder(Context c, int camId, Activity act){
         super(c);
-        mCamera = cam;
-        camId = id;
         mHolder = getHolder();
         mHolder.addCallback(this);
-        mRawPreviewCallback = cb;
+        activity = act;
+        threadedCam = new ThreadedCamera(camId, act);
         // deprecated setting, but required on Android versions prior to 3.0
         mHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
 
@@ -33,7 +32,11 @@ public class cameraHolder extends SurfaceView implements SurfaceHolder.Callback{
     }
     public void surfaceDestroyed (SurfaceHolder sh){
         Log.e("holder", "destroyed");
+        if(threadedCam != null) {
+            threadedCam.stopCam();
+        }
     }
+
     public void surfaceChanged (SurfaceHolder sh, int w, int h, int x){
         Log.e("holder", "changed");
         if (mHolder.getSurface() == null){
@@ -43,7 +46,7 @@ public class cameraHolder extends SurfaceView implements SurfaceHolder.Callback{
 
         // stop preview before making changes
         try {
-            mCamera.stopPreview();
+            threadedCam.getCamera().stopPreview();
         } catch (Exception e){
             // ignore: tried to stop a non-existent preview
             Log.e("holder", "changed error 1");
@@ -54,14 +57,19 @@ public class cameraHolder extends SurfaceView implements SurfaceHolder.Callback{
 
         // start preview with new settings
         try {
-            mCamera.setPreviewCallback(mRawPreviewCallback);
-            mCamera.setPreviewDisplay(mHolder);
-            mCamera.setDisplayOrientation(CameraUtils.getRequiredRotation(camId, true));
-            mCamera.startPreview();
+            threadedCam.startCam();
+            threadedCam.getCamera().setPreviewDisplay(mHolder);
+            threadedCam.getCamera().setDisplayOrientation(CameraUtils.getRequiredRotation(threadedCam.getCamera(),
+                    activity, threadedCam.getId(), true));
+            threadedCam.getCamera().startPreview();
 
         } catch (Exception e){
-            Log.e("holder", "changed error 2 " + (mCamera==null), e);
+            Log.e("holder", "changed error 2 " + (threadedCam.getCamera()==null), e);
         }
 
+    }
+
+    public ThreadedCamera getThreadedCam(){
+        return threadedCam;
     }
 }

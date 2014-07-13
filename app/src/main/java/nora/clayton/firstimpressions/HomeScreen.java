@@ -21,6 +21,9 @@ ThreadedCamera tc = null;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home_screen);
 
+        Log.e("onCreate","" + android.os.Process.myTid());
+        Log.e("cam id", "" + CameraUtils.getFrontCameraId());
+
         LinearLayout preview = (LinearLayout) findViewById(R.id.picLayout);
         final Button button = (Button) findViewById(R.id.button);
         button.setOnClickListener(new View.OnClickListener() {
@@ -33,13 +36,11 @@ ThreadedCamera tc = null;
         });
 
         if(CameraUtils.checkForFrontCam(this)) {
-            tc = new ThreadedCamera(CameraUtils.getFrontCameraId(), this, this);
-            if (tc.startCam()){
-                preview.addView(tc.ch);
-            }
+            Log.e("starting up again","yay");
+            cameraHolder ch = new cameraHolder(this,CameraUtils.getFrontCameraId(), this);
+            preview.addView(ch);
+            tc = ch.getThreadedCam();
         }
-        Log.e("onCreate","" + android.os.Process.myTid());
-        Log.e("cam id", "" + CameraUtils.getFrontCameraId());
     }
 
     @Override
@@ -52,6 +53,7 @@ ThreadedCamera tc = null;
                 Log.e("UI","image should be there " + (b_img!=null));
             }
         });
+        tc.getCamera().startPreview();
     }
 
     @Override
@@ -73,10 +75,4 @@ ThreadedCamera tc = null;
         return super.onOptionsItemSelected(item);
     }
 
-    public void onPause(){
-        super.onPause();
-        if(tc != null) {
-            tc.stopCam();
-        }
-    }
 }

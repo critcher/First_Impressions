@@ -1,8 +1,10 @@
 package nora.clayton.firstimpressions;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.hardware.Camera;
+import android.view.Surface;
 
 /**
  * Several functions that help when working with the android camera
@@ -18,16 +20,35 @@ public class CameraUtils {
         }
     }
 
-    public static int getRequiredRotation(int id, boolean preview){
+
+    //get the clockwise rotation needed to display thee preview or the actual image
+    //only currently works for front-facing cameras
+    public static int getRequiredRotation(Camera cam, Activity act, int camId, boolean preview){
         Camera.CameraInfo camInfo = new Camera.CameraInfo();
-        Camera.getCameraInfo(id,camInfo);
-        int offset = 0;
-        if (preview){
-            offset = 180;
+        Camera.getCameraInfo(camId,camInfo);
+        int deviceRotation = act.getWindowManager().getDefaultDisplay().getRotation();
+        int deviceAngle = 0;
+        switch (deviceRotation) {
+            case Surface.ROTATION_0: deviceAngle = 0; break;
+            case Surface.ROTATION_90: deviceAngle = 90; break;
+            case Surface.ROTATION_180: deviceAngle = 180; break;
+            case Surface.ROTATION_270: deviceAngle = 270; break;
         }
-        return (camInfo.orientation + offset) % 360;
+        int result;
+        if(preview){
+            //rotate
+            result = (camInfo.orientation + deviceAngle) % 360;
+            //account for front-camera mirroring
+            result = (360 - result) % 360;
+        }
+        else{
+            result = (camInfo.orientation + deviceAngle) % 360;
+        }
+        return result;
     }
 
+
+    //gets the camera id number of the front camera (-1 if none exists)
     public static int getFrontCameraId(){
         int cameraCount = 0;
         Camera.CameraInfo cameraInfo = new Camera.CameraInfo();

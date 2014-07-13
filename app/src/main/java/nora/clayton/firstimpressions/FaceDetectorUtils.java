@@ -14,7 +14,11 @@ import android.util.Log;
  * Provides functions to find faces in an image.
  */
 public class FaceDetectorUtils {
+    //constants for how many eye_widths wide and tall the face rectangle should be
+    private static final float WIDTH_MULTIPLIER = 2.0f;
+    private static final float HEIGHT_MULTIPLIER = 3.2f;
 
+    //finds one face in an image and returns a Bitmap with just the face in it
     public static Bitmap getFace(Bitmap img){
         Bitmap evenImg;
         //if the width is odd, cut off a column
@@ -32,10 +36,10 @@ public class FaceDetectorUtils {
         int count = face_detector.findFaces(evenImg, faces);
 
         if (count < 1 || faces[0].confidence() < .25){
-            return evenImg;
+            return null;
         }
-
-        float eye_width = faces[0].eyesDistance() * 2;
+        Log.e("angles","x: "+faces[0].pose(0)+" y: "+faces[0].pose(1)+" z: "+faces[0].pose(2));
+        float eye_width = faces[0].eyesDistance();
         PointF midpoint = new PointF();
         faces[0].getMidPoint(midpoint);
 
@@ -44,36 +48,38 @@ public class FaceDetectorUtils {
                                               faceRect.height());
     }
 
-    public static Rect getFaceRect(float eye_width, PointF midpoint, int originalWidth,
+    //helper function that gets a bounding box for a detected face
+    private static Rect getFaceRect(float eye_width, PointF midpoint, int originalWidth,
                                int originalHeight){
         int x, y, width, height;
-        if(midpoint.x - eye_width < 0) {
+        if(midpoint.x - eye_width * (WIDTH_MULTIPLIER / 2) < 0) {
             x = 0;
         }
         else{
-            x = (int) (midpoint.x - eye_width);
+            x = (int) (midpoint.x - eye_width * (WIDTH_MULTIPLIER / 2));
         }
-        if(midpoint.y - eye_width < 0) {
+        if(midpoint.y - eye_width * (HEIGHT_MULTIPLIER / 2)< 0) {
             y = 0;
         }
         else{
-            y = (int) (midpoint.y - eye_width);
+            y = (int) (midpoint.y - eye_width * (HEIGHT_MULTIPLIER / 2));
         }
-        if(x + eye_width * 2 > originalWidth){
+        if(x + eye_width * WIDTH_MULTIPLIER > originalWidth){
             width = originalWidth - x;
         }
         else{
-            width = (int) eye_width * 2;
+            width = (int) (eye_width * WIDTH_MULTIPLIER);
         }
-        if(y + eye_width * 2 > originalHeight){
+        if(y + eye_width * HEIGHT_MULTIPLIER > originalHeight){
             height = originalHeight - y;
         }
         else{
-            height = (int) eye_width * 2;
+            height = (int) (eye_width * HEIGHT_MULTIPLIER);
         }
         return new Rect(x, y, x + width, y + height);
     }
 
+    //converts a drawable (from res folder in app) to a Bitmap
     public static Bitmap drawableToBitmap (Drawable drawable) {
 
         Bitmap bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), Bitmap.Config.RGB_565);
