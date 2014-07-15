@@ -2,26 +2,28 @@ package nora.clayton.firstimpressions;
 
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
+import android.os.*;
 import android.support.v7.app.ActionBarActivity;
-import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+
+import Jama.Matrix;
 
 
-public class HomeScreen extends ActionBarActivity {
-
+public class HomeScreen extends ActionBarActivity{
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home_screen);
+        Log.e("Matrix","" + MatrixUtils.str(Matrix.identity(3,2)));
+        Log.e("Matrix","" + MatrixUtils.str(Matrix.identity(3,2),0));
 
-        ImageView imgView = (ImageView) findViewById(R.id.imageView);
-        int picIndex = R.drawable.lena;
-        Drawable pic = getResources().getDrawable(picIndex);
-        Bitmap pic2 = FaceDetectorUtils.drawableToBitmap(pic);
-        Bitmap b_img = FaceDetectorUtils.getFace(pic2);
-        imgView.setImageBitmap(b_img);
     }
 
 
@@ -43,4 +45,5 @@ public class HomeScreen extends ActionBarActivity {
         }
         return super.onOptionsItemSelected(item);
     }
+
 }
