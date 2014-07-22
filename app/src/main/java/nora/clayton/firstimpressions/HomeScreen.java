@@ -37,7 +37,7 @@ ThreadedCamera tc = null;
 
         if(CameraUtils.checkForFrontCam(this)) {
             Log.e("starting up again","yay");
-            cameraHolder ch = new cameraHolder(this,CameraUtils.getFrontCameraId(), this);
+            cameraView ch = new cameraView(this,CameraUtils.getFrontCameraId(), this);
             preview.addView(ch);
             tc = ch.getThreadedCam();
         }

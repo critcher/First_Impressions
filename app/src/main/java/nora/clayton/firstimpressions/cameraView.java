@@ -10,12 +10,12 @@ import android.view.SurfaceView;
 /**
  * Created by Clayton on 7/11/2014.
  */
-public class cameraHolder extends SurfaceView implements SurfaceHolder.Callback{
+public class cameraView extends SurfaceView implements SurfaceHolder.Callback{
     private SurfaceHolder mHolder;
     private Activity activity;
     private ThreadedCamera threadedCam;
 
-    public cameraHolder(Context c, int camId, Activity act){
+    public cameraView(Context c, int camId, Activity act){
         super(c);
         mHolder = getHolder();
         mHolder.addCallback(this);
