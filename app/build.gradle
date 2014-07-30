@@ -17,10 +17,21 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    packagingOptions{
+        exclude 'nbproject/build-impl.xml'
+        exclude 'nbproject/genfiles.properties'
+        exclude 'nbproject/private/private.properties'
+        exclude 'nbproject/private/private.xml'
+        exclude 'nbproject/project.properties'
+        exclude 'nbproject/project.xml'
+        exclude 'build.xml'
+    }
 }
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     compile 'com.android.support:appcompat-v7:19.+'
     compile files('libs/Jama-1.0.3.jar')
+    compile files('libs/JJIL-Android-12-22-08.jar')
+    compile files('libs/JJIL-12-22-08.jar')
 }

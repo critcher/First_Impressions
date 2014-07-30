@@ -46,7 +46,7 @@ ThreadedCamera tc = null;
     @Override
     public void onPictureReady(Bitmap bmap) {
         final ImageView imgView = (ImageView) findViewById(R.id.imageView);
-        final Bitmap b_img = FaceDetectorUtils.getFace(bmap);
+        final Bitmap b_img = FaceDetectorUtils.getFace(bmap, this);
         imgView.post(new Runnable() {
             public void run() {
                 imgView.setImageBitmap(b_img);

@@ -1,5 +1,6 @@
 package nora.clayton.firstimpressions;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.PointF;
@@ -7,6 +8,17 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.media.FaceDetector;
 import android.util.Log;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+
+import jjil.algorithm.Gray8DetectHaarMultiScale;
+import jjil.algorithm.Gray8Rgb;
+import jjil.algorithm.HaarClassifierCascade;
+import jjil.algorithm.RgbAvgGray;
+import jjil.android.RgbImageAndroid;
+import jjil.core.*;
 
 /**
  * Created by Clayton on 7/6/2014.
@@ -19,7 +31,7 @@ public class FaceDetectorUtils {
     private static final float HEIGHT_MULTIPLIER = 3.2f;
 
     //finds one face in an image and returns a Bitmap with just the face in it
-    public static Bitmap getFace(Bitmap img){
+    public static Bitmap getFace(Bitmap img, Context c){
         Bitmap evenImg;
         //if the width is odd, cut off a column
         if(img.getWidth() % 2 == 1) {
@@ -44,8 +56,31 @@ public class FaceDetectorUtils {
         faces[0].getMidPoint(midpoint);
 
         Rect faceRect = getFaceRect(eye_width, midpoint, evenImg.getWidth(), evenImg.getHeight());
-        return Bitmap.createBitmap(evenImg, faceRect.left, faceRect.top, faceRect.width(),
+        Bitmap facePic = Bitmap.createBitmap(evenImg, faceRect.left, faceRect.top, faceRect.width(),
                                               faceRect.height());
+
+        RgbImage jjilFace = RgbImageAndroid.toRgbImage(facePic);
+        RgbAvgGray toGray = new RgbAvgGray();
+        Bitmap detectedEyes = null;
+        try {
+            toGray.push(jjilFace);
+            InputStream eyeStream = c.getAssets().open("eyeMask.txt");
+            Gray8DetectHaarMultiScale detectHaar = new Gray8DetectHaarMultiScale(eyeStream, 5, 10);
+            detectHaar.push(toGray.getFront());
+            Gray8Rgb g2rgb = new Gray8Rgb();
+            g2rgb.push(detectHaar.getFront());
+            detectedEyes = RgbImageAndroid.toBitmap((RgbImage)g2rgb.getFront());
+        }
+        catch (IOException e){
+            Log.e("eye stuff", e.toString());
+            return null;
+        }
+        catch (jjil.core.Error e){
+            Log.e("eye stuff", e.toString());
+            return null;
+        }
+
+        return detectedEyes;
     }
 
     //helper function that gets a bounding box for a detected face
