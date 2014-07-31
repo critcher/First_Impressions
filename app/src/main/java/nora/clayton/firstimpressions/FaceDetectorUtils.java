@@ -64,8 +64,8 @@ public class FaceDetectorUtils {
         Bitmap detectedEyes = null;
         try {
             toGray.push(jjilFace);
-            InputStream eyeStream = c.getAssets().open("eyeMask.txt");
-            Gray8DetectHaarMultiScale detectHaar = new Gray8DetectHaarMultiScale(eyeStream, 5, 10);
+            InputStream eyeStream = c.getAssets().open("heyes.txt");
+            Gray8DetectHaarMultiScale detectHaar = new Gray8DetectHaarMultiScale(eyeStream, 1, 10);
             detectHaar.push(toGray.getFront());
             Gray8Rgb g2rgb = new Gray8Rgb();
             g2rgb.push(detectHaar.getFront());

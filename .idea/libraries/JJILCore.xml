@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="JJILCore">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/app/libs/JJILCore.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
