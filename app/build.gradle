@@ -35,4 +35,7 @@ dependencies {
     compile files('libs/JJIL-Android-12-22-08.jar')
     compile files('libs/JJIL-12-22-08.jar')
     compile files('libs/JJILCore.jar')
+    compile files('libs/jjil.jar')
+    compile files('libs/myjjil.jar')
+    compile files('libs/jjil2.jar')
 }
