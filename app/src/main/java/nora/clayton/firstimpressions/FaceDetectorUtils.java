@@ -34,8 +34,10 @@ import jjil.core.*;
  */
 public class FaceDetectorUtils {
     //constants for how many eye_widths wide and tall the face rectangle should be
-    private static final float WIDTH_MULTIPLIER = 2.0f;
-    private static final float HEIGHT_MULTIPLIER = 3.5f;
+    private static final float WIDTH_MULTIPLIER = 3.0f;
+    private static final float HEIGHT_MULTIPLIER = 4.8f;
+    private static final float WIDTH_MULTIPLIER2 = 2.0f;
+    private static final float HEIGHT_MULTIPLIER2 = 3.2f;
 
     //finds one face in an image and returns a Bitmap with just the face in it
     public static Bitmap getFace(Bitmap img, Context c){
@@ -61,7 +63,7 @@ public class FaceDetectorUtils {
         PointF midpoint = new PointF();
         faces[0].getMidPoint(midpoint);
 
-        Rect faceRect = getFaceRect(eye_width, midpoint, evenImg.getWidth(), evenImg.getHeight());
+        Rect faceRect = getFaceRect(eye_width, midpoint, evenImg.getWidth(), evenImg.getHeight(), WIDTH_MULTIPLIER, HEIGHT_MULTIPLIER);
         Bitmap facePic = Bitmap.createBitmap(evenImg, faceRect.left, faceRect.top, faceRect.width(),
                                               faceRect.height());
 
@@ -100,7 +102,7 @@ public class FaceDetectorUtils {
         angle = Math.toDegrees(angle);
         Log.e("angle", "" + angle);
 
-        if(Math.abs(angle) > 20){
+        if(Math.abs(angle) > 30){
             return facePic;
         }
 
@@ -137,7 +139,7 @@ public class FaceDetectorUtils {
         PointF midpoint2 = new PointF();
         faces2[0].getMidPoint(midpoint2);
 
-        Rect faceRect2 = getFaceRect(eye_width2, midpoint2, evenImg2.getWidth(), evenImg2.getHeight());
+        Rect faceRect2 = getFaceRect(eye_width2, midpoint2, evenImg2.getWidth(), evenImg2.getHeight(), WIDTH_MULTIPLIER2, HEIGHT_MULTIPLIER2);
         Bitmap facePic2 = Bitmap.createBitmap(evenImg2, faceRect2.left, faceRect2.top, faceRect2.width(),
                 faceRect2.height());
 
@@ -146,31 +148,31 @@ public class FaceDetectorUtils {
 
     //helper function that gets a bounding box for a detected face
     private static Rect getFaceRect(float eye_width, PointF midpoint, int originalWidth,
-                               int originalHeight){
+                               int originalHeight, float w_multiplier, float h_multiplier){
         int x, y, width, height;
-        if(midpoint.x - eye_width * (WIDTH_MULTIPLIER / 2) < 0) {
+        if(midpoint.x - eye_width * (w_multiplier / 2) < 0) {
             x = 0;
         }
         else{
-            x = (int) (midpoint.x - eye_width * (WIDTH_MULTIPLIER / 2));
+            x = (int) (midpoint.x - eye_width * (w_multiplier / 2));
         }
-        if(midpoint.y - eye_width * (HEIGHT_MULTIPLIER / 2)< 0) {
+        if(midpoint.y - eye_width * (h_multiplier / 2)< 0) {
             y = 0;
         }
         else{
-            y = (int) (midpoint.y - eye_width * (HEIGHT_MULTIPLIER / 2));
+            y = (int) (midpoint.y - eye_width * (h_multiplier / 2));
         }
-        if(x + eye_width * WIDTH_MULTIPLIER > originalWidth){
+        if(x + eye_width * w_multiplier > originalWidth){
             width = originalWidth - x;
         }
         else{
-            width = (int) (eye_width * WIDTH_MULTIPLIER);
+            width = (int) (eye_width * w_multiplier);
         }
-        if(y + eye_width * HEIGHT_MULTIPLIER > originalHeight){
+        if(y + eye_width * h_multiplier > originalHeight){
             height = originalHeight - y;
         }
         else{
-            height = (int) (eye_width * HEIGHT_MULTIPLIER);
+            height = (int) (eye_width * h_multiplier);
         }
         return new Rect(x, y, x + width, y + height);
     }
@@ -193,6 +195,7 @@ public class FaceDetectorUtils {
             return null;
         }
         Collections.sort(rects);
+        Collections.reverse(rects);
         return rects.subList(0, number);
     }
 
